@@ -7,6 +7,7 @@ import TSP.Types
 import TSP.Parser
 import Data.Attoparsec.ByteString.Char8
 import Data.ByteString.Char8 (pack)
+import Data.IntMap hiding (null)
 
 
 run :: String -> IO ()
