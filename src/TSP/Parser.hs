@@ -2,7 +2,7 @@
 
 module TSP.Parser where
 
-import TSP.Types
+import TSP.Types(insertEdgew, insertEdges, Map, Edge(..))
 
 import Data.Attoparsec.ByteString.Char8
 -- import Data.ByteString.Char8 (ByteString)
@@ -31,15 +31,24 @@ parseEdge = do
 -- test :: ByteString
 -- test = "3\n(1, 2) 0\n(3, 4) 0\n(5, 6) 0\n"
 
-parseMap :: Parser Map
-parseMap = do
-    insertEdges <$> many1 parseEdge <*> pure empty
+-- parseMap :: Parser Map
+-- parseMap = do
+--     result <- insertEdges <$> many1 parseEdge <*> pure empty
+--
+--     endOfInput
+--     return result
+parseMap :: Parser [Edge]
+parseMap = many1 parseEdge
 
-parseFile :: Parser Map
+parseFile :: Parser [Edge]
 parseFile = do
     scientific
     endOfLine
-    result <- parseMap
+    many1 parseEdge
+
+buildMap :: [Edge] -> Map
+buildMap [] = empty
+buildMap (e:es) = insertEdgew e $ buildMap es
 
     -- skipWhile (\c -> c == '\r' || c == '\n' || isSpace c)
-    return result
+    -- return result
