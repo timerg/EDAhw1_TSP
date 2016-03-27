@@ -45,18 +45,19 @@ updateFoot c (ps, ts) = ((ps ++ [c]), (L.filter (/= c) ts ))
 
 
 
-fahren :: Map -> Foot -> [Foot]
-fahren karte (path  , [])     = return (path, [])
-fahren karte ([]    , (c:cs)) = error "must have a starting city"
-fahren karte ((p:ps), (c:cs)) = do
+formCycle :: WMap -> Foot -> [Foot]
+formCycle karte ([]    , cs) = error "must have a starting city"
+formCycle karte ((p:ps), (c:cs)) = do
     nextCity <- c:cs
-    guard (adjacent p nextCity)
+    guard (adjacent p nextCity karte)
+    return (nextCity:p:ps, L.filter (/= nextCity) (c:cs))
+formCycle karte (p:ps  , [])     = do
+    nextCity <- [last ps]
+    guard (adjacent p nextCity karte)
+    return (nextCity:p:ps, [])
 
 
-    return ([], [])
 
-
--- fahren ::
 
 -- tspBB :: Map -> [Foot]
 -- tspBB m = do
