@@ -8,6 +8,7 @@ import Prelude hiding (lookup, null, filter)
 import Control.Monad
 import Control.Monad.State
 import Control.Monad.List
+import Control.Monad.Identity
 
 ----------------- BB --------------
 -- Greedy Search : [[paths]]. where 'length [paths] = 15'
@@ -62,7 +63,7 @@ data TSPState = TSPState
     ,   wMap :: WMap
     } deriving (Show)
 
-type TSPM a = ListT (State TSPState) a
+type TSPM a = ListT (StateT TSPState IO) a
 
 selectFrom :: [a] -> TSPM a
 selectFrom = ListT . return
@@ -79,6 +80,8 @@ formCycle' ((p:ps), (c:cs), sc) = do
             Nothing -> error "Impossible !!!"
             Just a -> sc + a
     bound <- gets bound
+    lift (lift $ print bound)
+    -- lift $ lift $ print bound
     guard (getPathCost nextPath karte < bound)
     return (nextPath, nextToGo, nextStepCount)
 formCycle' (p:ps  , [], sc) = do
@@ -120,11 +123,11 @@ recursFormCycle s = do
         then return s1
     else recursFormCycle $ formCycle' s1
 
-branch :: WMap -> [City] -> ([Step], TSPState)
+branch :: WMap -> [City] -> IO ([Step], TSPState)
 branch wm (c:cs) = runTSPM (recursFormCycle $ selectFrom [([c], cs, 0)]) (TSPState 100 wm)
 
 
-tspB :: WMap -> ([Step], TSPState)          -- Bound is not update
+tspB :: WMap -> IO ([Step], TSPState)          -- Bound is not update
 tspB wm = let (c:cs) = keys (wm)
     in  runTSPM (recursFormCycle $ selectFrom [([c], cs, 0)]) (TSPState 100 wm)
                 -- (recursFormCycle $ formCycle' ...)   this will get wrong result. Why?
@@ -151,8 +154,12 @@ mapWTest = insertWEdge (E 1 4 3) $ insertWEdge (E 3 4 3) $ insertWEdge (E 1 2 3)
 -- runState will take a 'intial state' and 'value with empty state', then return compute result of ' new value' and 'final state'
 -- p: m a; (ListT m a) -> m [a]
 -- s == m;  State (s [a]) s -> (a, s)
-runTSPM :: TSPM a -> TSPState -> ([a], TSPState)
-runTSPM p s = runState (runListT p) s
+-- runTSPM :: TSPM a -> TSPState -> ([a], TSPState)
+-- runTSPM p s = runState (runListT p) s
+
+runTSPM :: TSPM a -> TSPState -> IO ([a], TSPState)
+runTSPM p s = runStateT (runListT p) s
+
 
 stepTest :: Step
 stepTest = ([1], [3, 2, 4], 0)
@@ -160,7 +167,7 @@ stepTest = ([1], [3, 2, 4], 0)
 tspStateIntial :: TSPState
 tspStateIntial = (TSPState 100 mapWTest)
 
-runTest :: ([Step], TSPState)
+runTest :: IO ([Step], TSPState)
 runTest = runTSPM (formCycle' stepTest) tspStateIntial
 
 runTestMany = runTSPM (formCycle' stepTest >>= formCycle' >>= formCycle' >>= formCycle') tspStateIntial
