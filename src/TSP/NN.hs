@@ -34,8 +34,8 @@ findMinWiBound c m es =                             -- c is "the 'to City' of "t
         Nothing -> case ((==) 14 $ length es) of
                         True -> es
                         False -> findMinWiBound (from $ last es) (gainWtEdge (last es) $ loseWtCity (from $ last es) m) (init es)
-tspNN :: City -> Map -> [Edge]
-tspNN c m = findMinWiBound c m []
+-- tspNN :: City -> Map -> [Edge]
+-- tspNN c m = findMinWiBound c m []
 --
 -- tspNN :: City -> Map -> [Edge]           -- will have prob: might not passthrough all City
 -- tspNN c m = case findMin' c m of

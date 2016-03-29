@@ -3,7 +3,7 @@ module TSP.BB where
 import TSP.Types
 import TSP.Map
 import Data.List
-import Data.IntMap (keys)
+import Data.IntMap (keys, empty)
 import Prelude hiding (lookup, null, filter)
 import Control.Monad
 import Control.Monad.State
@@ -101,28 +101,52 @@ pathOfStep :: Step -> Path
 pathOfStep (p, t, s) = p
 
 
+
+-- recursFormCycle :: TSPM Step -> TSPM Step
+-- recursFormCycle s = do
+--      s1 <- s
+--      s2 <- formCycle' s1  :: TSPM Step
+--      stopresult <- stopCycle s2
+--      if stopresult == False
+--         then recursFormCycle (formCycle' s1)
+--      else
+--          formCycle' s2
+
 recursFormCycle :: TSPM Step -> TSPM Step
 recursFormCycle s = do
-     s1 <- s
-     s2 <- formCycle' s1  :: TSPM Step
-     stopresult <- stopCycle s2
-     if stopresult == True
-         then return s2
-     else
-         recursFormCycle (formCycle' s1)
+    s1 <- s
+    stopresult <- stopCycle s1
+    if stopresult == True
+        then return s1
+    else recursFormCycle $ formCycle' s1
 
-tspBB :: WMap -> ([Step], TSPState)
-tspBB wm = let (c:cs) = keys (wm)
-    in  runTSPM ((recursFormCycle.formCycle') ([c], cs, 0)) (TSPState 100 wm)
+branch :: WMap -> [City] -> ([Step], TSPState)
+branch wm (c:cs) = runTSPM (recursFormCycle $ selectFrom [([c], cs, 0)]) (TSPState 100 wm)
+
+
+tspB :: WMap -> ([Step], TSPState)          -- Bound is not update
+tspB wm = let (c:cs) = keys (wm)
+    in  runTSPM (recursFormCycle $ selectFrom [([c], cs, 0)]) (TSPState 100 wm)
                 -- (recursFormCycle $ formCycle' ...)   this will get wrong result. Why?
+
+-- tspBB :: WMap -> ([Step], TSPState)          -- Bound is not update
+-- tspBB wm = let cs = keys (wm) in
+
+
+
+
+
+
 
 tspmLength :: ([Step], TSPState) -> Int
 tspmLength (a, b) = length $ fst (a, b)
 
 
-
-
 ----------------- For Testing --------------
+
+
+mapWTest :: WMap
+mapWTest = insertWEdge (E 1 4 3) $ insertWEdge (E 3 4 3) $ insertWEdge (E 1 2 3) $ insertWEdge (E 1 3 3) $ insertWEdge (E 3 2 3) $ insertWEdge (E 2 4 3) empty
 
 -- runState will take a 'intial state' and 'value with empty state', then return compute result of ' new value' and 'final state'
 -- p: m a; (ListT m a) -> m [a]
@@ -147,6 +171,8 @@ runTestMany = runTSPM (formCycle' stepTest >>= formCycle' >>= formCycle' >>= for
 --             s2 <- formCycle' s
 --             stopCycle s2
 
+
+testTspB = tspB mapWTest
 
 
 --------------------------------------------

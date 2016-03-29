@@ -25,9 +25,10 @@ run path = do
         Just edges -> do
             let karte = buildMap edges
             let karteW = buildWMap edges
-            let bbResult = tspBB karteW
+            let bbResult = tspB karteW
             let resultLength = tspmLength bbResult
             writeFile "./data/result.txt" $ (show resultLength) ++ ("\n") ++ (serializeTSPM bbResult)
+            -- print karteW
 
 
 

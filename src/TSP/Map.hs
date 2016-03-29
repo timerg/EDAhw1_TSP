@@ -10,8 +10,8 @@ import Prelude hiding (lookup, null, filter)
 mapTest :: Map
 mapTest = insertEdge (E 1 4 6) $ insertEdge (E 3 4 5) $ insertEdge (E 1 2 3) $ insertEdge (E 1 3 3) $ insertEdge (E 3 2 1) empty
 
-mapWTest :: WMap
-mapWTest = insertWEdge (E 1 4 6) $ insertWEdge (E 3 4 5) $ insertWEdge (E 1 2 3) $ insertWEdge (E 1 3 3) $ insertWEdge (E 3 2 1) empty
+-- mapWTest :: WMap
+-- mapWTest = insertWEdge (E 1 4 6) $ insertWEdge (E 3 4 5) $ insertWEdge (E 1 2 3) $ insertWEdge (E 1 3 3) $ insertWEdge (E 3 2 1) empty
 
 --------------------------------------------------------------------------------
 --  City - Weight - City
