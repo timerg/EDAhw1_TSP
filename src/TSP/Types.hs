@@ -25,12 +25,15 @@ data RandC = RC Cost [City]  deriving (Eq, Show)   -- cost and rout
 type Path = [City]
 type ToGo = [City]
 type Foot = (Path, ToGo)
+type StepCount = Int
+type Step = (Path, ToGo, StepCount)
+
+
+
+
 type Dist = Int
 
--- insertWEdge :: Edge -> Map -> Map
--- insertWEdge (E from to weight) m =
---     insertWith (\_ old -> insert to weight old) from (singleton to weight) $
---     insertWith (\_ old -> insert from weight old) to (singleton from weight) m
+
 
 -- singleton :: Key -> a -> IntMap a
 -- insert :: Key -> a -> IntMap a -> IntMap a

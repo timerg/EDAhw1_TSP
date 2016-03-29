@@ -51,6 +51,7 @@ getPathCost :: Path -> WMap -> Cost
 getPathCost (c1:c2:cs) wm = case getWWeight c1 c2 wm of
     Nothing -> error "No path for some Citys in Path"
     Just w -> (+) w $ getPathCost (c2:cs) wm
+getPathCost cs wm = 0
 
 adjacent :: City -> City -> WMap -> Bool
 adjacent a b m = case lookup a m of

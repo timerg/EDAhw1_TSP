@@ -39,20 +39,5 @@ parseFile' input = case parseOnly parseFile input of
     Right result -> Just result
 
 
--- test :: ByteString
--- test = "3\n(1, 2) 0\n(3, 4) 0\n(5, 6) 0\n"
-
--- parseMap :: Parser Map
--- parseMap = do
---     result <- insertEdges <$> many1 parseEdge <*> pure empty
---
---     endOfInput
---     return result
 
 
--- buildWMap :: [Edge] -> WMap
--- buildWMap []     = empty
--- buildWMap (e:es) = insertEdge e $ buildMap es
-
-    -- skipWhile (\c -> c == '\r' || c == '\n' || isSpace c)
-    -- return result
