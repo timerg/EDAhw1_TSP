@@ -50,6 +50,12 @@ data Step = S
     ,   stepCount :: StepCount
     } deriving (Show)
 
+instance Eq Step where
+    (S _ _ sc1) == (S _ _ sc2) = sc1 == sc2
+
+instance Ord Step where
+    (S _ _ sc1) `compare` (S _ _ sc2) = sc1 `compare` sc2
+
 data Result = Result [([Step], TSPState)]
 
 instance Show Result where

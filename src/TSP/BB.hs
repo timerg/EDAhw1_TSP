@@ -19,12 +19,6 @@ import Control.Monad.Identity
 updateFoot :: City -> Foot -> Foot
 updateFoot c (ps, ts) = ((ps ++ [c]), (filter (/= c) ts ))
 
--- countDist :: [City] -> Map -> Dist
--- countDist (c1:(c2:cs)) m =
---
--- getWeight :: City -> City -> Map -> Weight
--- getWeight c1 c2 m = lookup c1 m
-
 -- take a foot with [Citys] has passed and [Citys] to go; also take a map.
 -- Start from the last City in 'paths' and find [City]: next possible citys through Map
 -- If can't fnd City: 'Nothing', the start city isn't in Map -> error
@@ -45,6 +39,8 @@ updateFoot c (ps, ts) = ((ps ++ [c]), (filter (/= c) ts ))
 --         lookupNextCity = L.concat . elems <$> lookup (last paths) m
 
 
+runTSPM :: TSPM a -> TSPState -> IO ([a], TSPState)
+runTSPM p s = runStateT (runListT p) s
 
 formCycle :: WMap -> Foot -> [Foot]
 formCycle karte ([]    , cs) = error "must have a starting city"
@@ -57,13 +53,6 @@ formCycle karte (p:ps  , [])     = do
     guard (adjacent p nextCity karte)
     return (nextCity:p:ps, [])
 
-
--- data TSPState = TSPState
---     {   bound :: Int
---     ,   wMap :: WMap
---     } deriving (Show)
---
--- type TSPM a = ListT (StateT TSPState IO) a
 
 selectFrom :: [a] -> TSPM a
 selectFrom = ListT . return
@@ -91,8 +80,11 @@ formCycle' (S (p:ps) [] sc) = do
         nextStepCount = case (getWWeight p nextCity karte) of
             Nothing -> error "Impossible !!!"
             Just a -> sc + a
-    bound <- gets bound  :: TSPM Int
-    guard (getPathCost nextPath karte < bound)
+    theBound <- gets bound  :: TSPM Int
+    guard (getPathCost nextPath karte < theBound)
+    if nextStepCount < theBound
+        then put $ TSPState nextStepCount karte
+        else return ()
     return (S nextPath [] nextStepCount)
 
 stopCycle :: Step -> Int -> Bool
@@ -103,19 +95,7 @@ pathOfStep (S p t s) = p
 
 
 
--- findAllCycles :: TSPM Step -> TSPM Step
--- findAllCycles s = do
---      s1 <- s
---      s2 <- formCycle' s1  :: TSPM Step
---      stopresult <- stopCycle s2
---      if stopresult == False
---         then findAllCycles (formCycle' s1)
---      else
---          formCycle' s2
-
-
-
--- Take intial step, find all the way to form a Cycle. Then return all reults
+-- Take intial step, find all the way to form a Cycle. Then return all results
 findAllCycles :: Int -> Step -> TSPM Step
 findAllCycles numberOfCities s = do
     if stopCycle s numberOfCities == True then
@@ -126,48 +106,57 @@ findAllCycles numberOfCities s = do
             findAllCycles numberOfCities result
         -- formCycle' s >>= findAllCycles numberOfCities
 
--- genIntialStep :: [City] -> [Step]
--- genIntialStep [] = []
--- genIntialStep (c:cs) = [([c], cs, 0)] ++ genIntialStep cs
 
 genIntialStep :: [City] -> City -> Step
 genIntialStep allCities initialCity = (S [initialCity] (delete initialCity allCities) 0)
 
 
- -- [Step] -> Step
 
--- Ps. mapM will execuate serially
+------------ Search Cycles by taking each city as start point -> 15 Results of Step -----------
+
+-- Get start from all city serially.
+-- Ps. mapM will execuate serially.
 runAllCities :: WMap -> [City] -> IO Result
 runAllCities wm allCities = do
-    result <- mapM (\initialCity -> runTSPM (findAllCycles (length allCities) (genIntialStep allCities initialCity)) (TSPState 100 wm)) allCities
+    result <- mapM (\initialCity -> leaveMin =<< runTSPM (findAllCycles (length allCities) (genIntialStep allCities initialCity)) (TSPState 100 wm)) allCities
     -- print (length result)
     -- print (map length result)
     -- print (take 1 result)
+    print (Result result)
     return (Result result)
 
+leaveMin :: ([Step], TSPState) -> IO ([Step], TSPState)
+leaveMin ([], b) = do return ([], b)
+leaveMin (ss, b) = do
+    let minS = minimumStep ss
+    return (minS, b)
 
-runTSPM :: TSPM a -> TSPState -> IO ([a], TSPState)
-runTSPM p s = runStateT (runListT p) s
-
--- runBB :: WMap -> IO ()
--- runBB wm = do
-    -- void $ runTSPM (runAllCities (keys wm)) (TSPState 100 wm)
-
--- runBB :: WMap -> IO ([Step], TSPState)
--- runBB wm = runTSPM (runAllCities (keys wm)) (TSPState 100 wm)
-
+minimumStep :: [Step] -> [Step]
+minimumStep [] = []
+minimumStep ss = [minimum ss]
 
 
 
--- tspB :: WMap -> IO ([Step], TSPState)          -- Bound is not update
--- tspB wm = let (c:cs) = keys (wm)
---     in  runTSPM (findAllCycles $ selectFrom [([c], cs, 0)]) (TSPState 100 wm)
---                 -- (findAllCycles $ formCycle' ...)   this will get wrong result. Why?
+------------ Search Cycles by taking one City as Start point -> 1 Result of Step -----------
+runAllCities' :: WMap -> [City] -> IO Result
+runAllCities' wm allCities = repeatRun allCities allCities (TSPState 100 wm)
+    where   repeatRun :: [City] -> [City] -> TSPState -> IO Result
+            repeatRun  allCities (c:cs) stateNow = do
+                result <-  leaveMin =<< runTSPM (findAllCycles (length allCities) (genIntialStep allCities c)) stateNow
+                let stateNext = takeResultBound result
+                resultNext <- repeatRun allCities cs stateNext
+                return $  addUpResult result resultNext
+            repeatRun  allCities [] stateNow = do
+                return $ Result [([], stateNow)]
+
+addUpResult :: ([Step], TSPState) -> Result -> Result
+addUpResult s (Result r) = Result (s:r)
+
+takeResultBound :: ([Step], TSPState) -> TSPState
+takeResultBound (ss, ts) = ts
 
 
-
-
-
+----------------------------------
 
 
 
@@ -199,11 +188,6 @@ runTest = runTSPM (formCycle' stepTest) tspStateIntial
 
 runTestMany = runTSPM (formCycle' stepTest >>= formCycle' >>= formCycle' >>= formCycle') tspStateIntial
 
--- test :: (([Bool], TSPState))
--- test = runTSPM (f ([1,2], [3, 4], 0)) tspStateIntial
---     where f s = do              --TSPM Bool
---             s2 <- formCycle' s
---             stopCycle s2
 
 
 -- testTspB = tspB mapWTest
