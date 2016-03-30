@@ -25,10 +25,12 @@ run path = do
         Just edges -> do
             let karte = buildMap edges
             let karteW = buildWMap edges
-            bbResult <- tspB karteW
-            let resultLength = tspmLength bbResult
-            writeFile "./data/result.txt" $ (show resultLength) ++ ("\n") ++ (serializeTSPM bbResult)
-            -- print karteW
+            -- bbResult <- branch karteW
+            result <- runAllCities karteW (keys karteW)
+            let resultLength = numberOfCycle result
+            -- print result
+            writeFile "./data/result.txt" $ (show $ numberOfCycle result) ++ ("\n") ++ (show result)
+            -- -- print edges
 
 
 

@@ -58,19 +58,19 @@ formCycle karte (p:ps  , [])     = do
     return (nextCity:p:ps, [])
 
 
-data TSPState = TSPState
-    {   bound :: Int
-    ,   wMap :: WMap
-    } deriving (Show)
-
-type TSPM a = ListT (StateT TSPState IO) a
+-- data TSPState = TSPState
+--     {   bound :: Int
+--     ,   wMap :: WMap
+--     } deriving (Show)
+--
+-- type TSPM a = ListT (StateT TSPState IO) a
 
 selectFrom :: [a] -> TSPM a
 selectFrom = ListT . return
 
 formCycle' :: Step -> TSPM Step
-formCycle' ([]    , cs, sc) = error "must have a starting city"
-formCycle' ((p:ps), (c:cs), sc) = do
+formCycle' (S [] cs sc) = error "must have a starting city"
+formCycle' (S (p:ps) (c:cs) sc) = do
     nextCity <- selectFrom (c:cs)   -- ListT (State Int) City;  nextCity :: City
     karte <- gets wMap
     guard (adjacent p nextCity karte)
@@ -80,11 +80,10 @@ formCycle' ((p:ps), (c:cs), sc) = do
             Nothing -> error "Impossible !!!"
             Just a -> sc + a
     bound <- gets bound
-    lift (lift $ print bound)
     -- lift $ lift $ print bound
     guard (getPathCost nextPath karte < bound)
-    return (nextPath, nextToGo, nextStepCount)
-formCycle' (p:ps  , [], sc) = do
+    return (S nextPath nextToGo nextStepCount)
+formCycle' (S (p:ps) [] sc) = do
     nextCity <- selectFrom [last (p:ps)]
     karte <- gets wMap
     guard (adjacent p nextCity karte)
@@ -94,46 +93,76 @@ formCycle' (p:ps  , [], sc) = do
             Just a -> sc + a
     bound <- gets bound  :: TSPM Int
     guard (getPathCost nextPath karte < bound)
-    return (nextPath, [], nextStepCount)
+    return (S nextPath [] nextStepCount)
 
-stopCycle :: Step -> TSPM Bool
-stopCycle tms = do
-    return $ (length $ pathOfStep tms) == 16
+stopCycle :: Step -> Int -> Bool
+stopCycle tms numberOfCities = (length $ pathOfStep tms) == numberOfCities + 1
 
 pathOfStep :: Step -> Path
-pathOfStep (p, t, s) = p
+pathOfStep (S p t s) = p
 
 
 
--- recursFormCycle :: TSPM Step -> TSPM Step
--- recursFormCycle s = do
+-- findAllCycles :: TSPM Step -> TSPM Step
+-- findAllCycles s = do
 --      s1 <- s
 --      s2 <- formCycle' s1  :: TSPM Step
 --      stopresult <- stopCycle s2
 --      if stopresult == False
---         then recursFormCycle (formCycle' s1)
+--         then findAllCycles (formCycle' s1)
 --      else
 --          formCycle' s2
 
-recursFormCycle :: TSPM Step -> TSPM Step
-recursFormCycle s = do
-    s1 <- s
-    stopresult <- stopCycle s1
-    if stopresult == True
-        then return s1
-    else recursFormCycle $ formCycle' s1
-
-branch :: WMap -> [City] -> IO ([Step], TSPState)
-branch wm (c:cs) = runTSPM (recursFormCycle $ selectFrom [([c], cs, 0)]) (TSPState 100 wm)
 
 
-tspB :: WMap -> IO ([Step], TSPState)          -- Bound is not update
-tspB wm = let (c:cs) = keys (wm)
-    in  runTSPM (recursFormCycle $ selectFrom [([c], cs, 0)]) (TSPState 100 wm)
-                -- (recursFormCycle $ formCycle' ...)   this will get wrong result. Why?
+-- Take intial step, find all the way to form a Cycle. Then return all reults
+findAllCycles :: Int -> Step -> TSPM Step
+findAllCycles numberOfCities s = do
+    if stopCycle s numberOfCities == True then
+        return s
+    else
+        do
+            result <- formCycle' s
+            findAllCycles numberOfCities result
+        -- formCycle' s >>= findAllCycles numberOfCities
 
--- tspBB :: WMap -> ([Step], TSPState)          -- Bound is not update
--- tspBB wm = let cs = keys (wm) in
+-- genIntialStep :: [City] -> [Step]
+-- genIntialStep [] = []
+-- genIntialStep (c:cs) = [([c], cs, 0)] ++ genIntialStep cs
+
+genIntialStep :: [City] -> City -> Step
+genIntialStep allCities initialCity = (S [initialCity] (delete initialCity allCities) 0)
+
+
+ -- [Step] -> Step
+
+-- Ps. mapM will execuate serially
+runAllCities :: WMap -> [City] -> IO Result
+runAllCities wm allCities = do
+    result <- mapM (\initialCity -> runTSPM (findAllCycles (length allCities) (genIntialStep allCities initialCity)) (TSPState 100 wm)) allCities
+    -- print (length result)
+    -- print (map length result)
+    -- print (take 1 result)
+    return (Result result)
+
+
+runTSPM :: TSPM a -> TSPState -> IO ([a], TSPState)
+runTSPM p s = runStateT (runListT p) s
+
+-- runBB :: WMap -> IO ()
+-- runBB wm = do
+    -- void $ runTSPM (runAllCities (keys wm)) (TSPState 100 wm)
+
+-- runBB :: WMap -> IO ([Step], TSPState)
+-- runBB wm = runTSPM (runAllCities (keys wm)) (TSPState 100 wm)
+
+
+
+
+-- tspB :: WMap -> IO ([Step], TSPState)          -- Bound is not update
+-- tspB wm = let (c:cs) = keys (wm)
+--     in  runTSPM (findAllCycles $ selectFrom [([c], cs, 0)]) (TSPState 100 wm)
+--                 -- (findAllCycles $ formCycle' ...)   this will get wrong result. Why?
 
 
 
@@ -141,8 +170,9 @@ tspB wm = let (c:cs) = keys (wm)
 
 
 
-tspmLength :: ([Step], TSPState) -> Int
-tspmLength (a, b) = length $ fst (a, b)
+
+numberOfCycle :: Result -> Int
+numberOfCycle (Result as) = sum . map (length . fst) $ as
 
 
 ----------------- For Testing --------------
@@ -157,12 +187,9 @@ mapWTest = insertWEdge (E 1 4 3) $ insertWEdge (E 3 4 3) $ insertWEdge (E 1 2 3)
 -- runTSPM :: TSPM a -> TSPState -> ([a], TSPState)
 -- runTSPM p s = runState (runListT p) s
 
-runTSPM :: TSPM a -> TSPState -> IO ([a], TSPState)
-runTSPM p s = runStateT (runListT p) s
-
 
 stepTest :: Step
-stepTest = ([1], [3, 2, 4], 0)
+stepTest = (S [1] [3, 2, 4] 0)
 
 tspStateIntial :: TSPState
 tspStateIntial = (TSPState 100 mapWTest)
@@ -179,7 +206,7 @@ runTestMany = runTSPM (formCycle' stepTest >>= formCycle' >>= formCycle' >>= for
 --             stopCycle s2
 
 
-testTspB = tspB mapWTest
+-- testTspB = tspB mapWTest
 
 
 --------------------------------------------
@@ -192,6 +219,6 @@ testTspB = tspB mapWTest
 
 
 
-
+-- TSPM
 -- http://adit.io/posts/2013-06-10-three-useful-monads.html#the-foot-monad
 -- http://adit.io/posts/2013-06-10-three-useful-monads.html#the-writer-monad

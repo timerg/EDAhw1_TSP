@@ -5,6 +5,11 @@ import qualified Data.IntMap as InM (map)
 import Prelude hiding (lookup, null, filter)
 import qualified Data.List as L
 import Control.Monad
+import Control.Monad.State
+import Control.Monad.List
+import Control.Monad.Identity
+
+
 type City = Int
 type Weight = Int
 type Cost = Int
@@ -26,10 +31,30 @@ type Path = [City]
 type ToGo = [City]
 type Foot = (Path, ToGo)
 type StepCount = Int
-type Step = (Path, ToGo, StepCount)
+-- type Step = (Path, ToGo, StepCount)
+
+data TSPState = TSPState
+    {   bound :: Int
+    ,   wMap :: WMap
+    }
+
+instance Show TSPState where
+    show state = "Bound = " ++ (show $ bound state) ++ "\n" ++ (show $ wMap state)
 
 
+type TSPM a = ListT (StateT TSPState IO) a
 
+data Step = S
+    {   stepPath :: Path
+    ,   stepTogo :: ToGo
+    ,   stepCount :: StepCount
+    } deriving (Show)
+
+data Result = Result [([Step], TSPState)]
+
+instance Show Result where
+    show (Result results) = L.intercalate "\n" (map show steps)
+        where   steps = concat $ map fst results
 
 type Dist = Int
 
