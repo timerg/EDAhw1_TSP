@@ -12,9 +12,10 @@ import Data.ByteString.Char8 (pack, readFile)
 import Data.IntMap hiding (null, map)
 import qualified Data.IntMap as InM (map)
 import Data.Either
+import Data.List (intercalate)
 import Prelude hiding (readFile)
 import TSP.BB
-import TSP.Writer
+import TSP.NN
 
 
 run :: String -> IO ()
@@ -25,10 +26,12 @@ run path = do
         Just edges -> do
             let karte = buildMap edges
             let karteW = buildWMap edges
-            result <- runAllCities' karteW (keys karteW)
-            let resultLength = numberOfCycle result
-            -- print result
-            writeFile "./data/result.txt" $ (show $ numberOfCycle result) ++ ("\n") ++ (show result)
+            resultBest <- runAllCities' karteW (keys karteW)
+            resultAllCities <- runAllCities karteW (keys karteW)
+            putStrLn $ (show $ numberOfCycle resultBest) ++ ("\n") ++ (show resultBest)
+            -- writeFile "./data/result_NN.txt" $ intercalate "\n" $ map (show.(tspNN karte)) (keys karte)
+            writeFile "./data/result_BB.txt" $ (show $ numberOfCycle resultBest) ++ ("\n") ++ (show resultBest)
+            -- writeFile "./data/result_AllCities.txt" $ (show $ numberOfCycle resultAllCities) ++ ("\n") ++ (show resultAllCities)
 
 
 

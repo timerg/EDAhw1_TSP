@@ -20,12 +20,19 @@ data Edge = E
     , weight    :: Weight
     } deriving (Eq, Show, Ord)
 
+data Edges = Es
+    {edges :: [Edge]}
+instance Show Edges where
+    show (Es es) = "The Cost is " ++ (show $ L.sum $ map weight es) ++ ",\t"
+        ++ (show $ (length.edges) (Es es)) ++ " cities has passed."
+        ++ "\t" ++ (show $ L.map from (es))
+
+
 -- City - Weight - City
 type Map = IntMap (IntMap [City])
 -- City - City - Weight
 type WMap = IntMap (IntMap Weight)
 
-data RandC = RC Cost [City]  deriving (Eq, Show)   -- cost and rout
 
 type Path = [City]
 type ToGo = [City]
@@ -62,16 +69,7 @@ instance Show Result where
     show (Result results) = L.intercalate "\n" (map show steps)
         where   steps = concat $ map fst results
 
-type Dist = Int
 
 
-
--- singleton :: Key -> a -> IntMap a
--- insert :: Key -> a -> IntMap a -> IntMap a
--- insertWith :: (f: City -> City -> City)
-            --  -> k : Key   假設剛開始 k 不存在，插入 k - x ； 否則，更新為 k - (f x 舊)
-            --  -> x : [City]     要插入的值
-            --  -> IntMap a  舊的
-            --  -> IntMap a  新的結果
 
 

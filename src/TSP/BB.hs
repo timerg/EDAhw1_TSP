@@ -10,33 +10,10 @@ import Control.Monad.State
 import Control.Monad.List
 import Control.Monad.Identity
 
------------------ BB --------------
--- Greedy Search : [[paths]]. where 'length [paths] = 15'
-
-
-
+----------------- BB -------------
 
 updateFoot :: City -> Foot -> Foot
 updateFoot c (ps, ts) = ((ps ++ [c]), (filter (/= c) ts ))
-
--- take a foot with [Citys] has passed and [Citys] to go; also take a map.
--- Start from the last City in 'paths' and find [City]: next possible citys through Map
--- If can't fnd City: 'Nothing', the start city isn't in Map -> error
--- Find difference between paths, keep the difference.
--- Will get original paths if no more new city to go
--- fahren :: Foot -> Map -> [Foot]
--- fahren (paths, ts) m = case  (L.\\) <$> lookupNextCity <*> (pure (init paths)) of
---     Nothing -> []       -- error
---     Just [] -> [(paths, ts)]
---     Just cs -> do
---         x <- cs
---         y <- (paths, ts):[]
---         return $ updateFoot x y
---     where
---         -- find the nextC of last City in paths, which will be a 'IntMap [City]'
---         -- elems thraw away keys, will get [[City]]; L.concat reduce it to [City]
---         lookupNextCity :: Maybe [City]
---         lookupNextCity = L.concat . elems <$> lookup (last paths) m
 
 
 runTSPM :: TSPM a -> TSPState -> IO ([a], TSPState)
@@ -111,7 +88,7 @@ genIntialStep :: [City] -> City -> Step
 genIntialStep allCities initialCity = (S [initialCity] (delete initialCity allCities) 0)
 
 
-
+------------------------------------------------------------------------
 ------------ Search Cycles by taking each city as start point -> 15 Results of Step -----------
 
 -- Get start from all city serially.
@@ -119,10 +96,6 @@ genIntialStep allCities initialCity = (S [initialCity] (delete initialCity allCi
 runAllCities :: WMap -> [City] -> IO Result
 runAllCities wm allCities = do
     result <- mapM (\initialCity -> leaveMin =<< runTSPM (findAllCycles (length allCities) (genIntialStep allCities initialCity)) (TSPState 100 wm)) allCities
-    -- print (length result)
-    -- print (map length result)
-    -- print (take 1 result)
-    print (Result result)
     return (Result result)
 
 leaveMin :: ([Step], TSPState) -> IO ([Step], TSPState)
@@ -156,8 +129,8 @@ takeResultBound :: ([Step], TSPState) -> TSPState
 takeResultBound (ss, ts) = ts
 
 
-----------------------------------
-
+------------------------------------------------------------------------
+------------ Count for Report ------------
 
 
 numberOfCycle :: Result -> Int

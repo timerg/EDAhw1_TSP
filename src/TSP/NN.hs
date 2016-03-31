@@ -37,11 +37,11 @@ findMinWiBound c m es =                             -- c is "the 'to City' of "t
 -- tspNN :: City -> Map -> [Edge]
 -- tspNN c m = findMinWiBound c m []
 --
--- tspNN :: City -> Map -> [Edge]           -- will have prob: might not passthrough all City
--- tspNN c m = case findMin' c m of
---                 Nothing -> []       -- no "the City" in Map
---                 Just e ->            -- E cs (nearest City) w
---                     (:) e $ tspNN (to e) (deleteCity c m)
+tspNN :: Map -> City -> Edges           -- will have prob: might not passthrough all City
+tspNN m c = case findMin' c m of
+                Nothing -> Es []       -- no "the City" in Map
+                Just e ->            -- E cs (nearest City) w
+                    Es $ (:) e $ edges $ tspNN (deleteCity c m) (to e)
 
 
 allBlock :: Map -> Bool
