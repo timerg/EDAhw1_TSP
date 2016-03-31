@@ -26,11 +26,16 @@ run path = do
         Just edges -> do
             let karte = buildMap edges
             let karteW = buildWMap edges
-            resultBest <- runAllCities' karteW (keys karteW)
+            Result results <- runAllCities' karteW (keys karteW)
             resultAllCities <- runAllCities karteW (keys karteW)
-            putStrLn $ (show $ numberOfCycle resultBest) ++ ("\n") ++ (show resultBest)
+            let step = head $ fst $ head results
+            let bestCycle = stepPath step
+            let totalLength = stepCount step
+            putStrLn $ "total length: " ++ show totalLength
+            putStrLn $ "cycle: " ++ show bestCycle
+            -- putStrLn $ (show resultBest)
             -- writeFile "./data/result_NN.txt" $ intercalate "\n" $ map (show.(tspNN karte)) (keys karte)
-            writeFile "./data/result_BB.txt" $ (show $ numberOfCycle resultBest) ++ ("\n") ++ (show resultBest)
+            -- writeFile "./data/result_BB.txt" $ (show $ numberOfCycle resultBest) ++ ("\n") ++ (show resultBest)
             -- writeFile "./data/result_AllCities.txt" $ (show $ numberOfCycle resultAllCities) ++ ("\n") ++ (show resultAllCities)
 
 
