@@ -14,4 +14,8 @@ cabal.sandbox.config
 *.prof
 *.aux
 *.hp
+*.pdf
 .stack-work/
+*.DS_Store
+*._*
+result*.txt
