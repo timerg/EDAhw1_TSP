@@ -16,6 +16,8 @@ updateFoot :: City -> Foot -> Foot
 updateFoot c (ps, ts) = ((ps ++ [c]), (filter (/= c) ts ))
 
 
+-- runStateT :: StateT s m a -> s -> m (a, s)
+-- runListT :: ListT m a -> m [a]
 runTSPM :: TSPM a -> TSPState -> IO ([a], TSPState)
 runTSPM p s = runStateT (runListT p) s
 

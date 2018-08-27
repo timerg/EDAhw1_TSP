@@ -1,8 +1,8 @@
 module TSP.Types where
 
-import Data.IntMap hiding (map)
+import Data.IntMap hiding (map, null)
 import qualified Data.IntMap as InM (map)
-import Prelude hiding (lookup, null, filter)
+import Prelude hiding (lookup, filter)
 import qualified Data.List as L
 import Control.Monad
 import Control.Monad.State
@@ -23,9 +23,8 @@ data Edge = E
 data Edges = Es
     {edges :: [Edge]}
 instance Show Edges where
-    show (Es es) = "The Cost is " ++ (show $ L.sum $ map weight es) ++ ",\t"
-        ++ (show $ (length.edges) (Es es)) ++ " cities has passed."
-        ++ "\t" ++ (show $ L.map from (es))
+    show (Es es) = "The Cost is " ++ (show $ L.sum $ map weight es) ++ (show $ (length.edges) (Es es)) ++ " cities has passed."
+        ++ (show $ L.map from (es))
 
 
 -- City - Weight - City
@@ -55,8 +54,14 @@ data Step = S
     {   stepPath :: Path
     ,   stepTogo :: ToGo
     ,   stepCount :: StepCount
-    } deriving (Show)
+    } 
 
+   
+instance Show Step where 
+    show (S p t c) = case null t of
+                        True -> "Travel Complete, total length: " ++ (show c) ++ "\n \t" ++ "cycle: " ++ (show p)
+                        False -> "Travel Not Complete, Path: " ++ (show p) ++ "; City to go: " ++ (show t)
+ 
 instance Eq Step where
     (S _ _ sc1) == (S _ _ sc2) = sc1 == sc2
 
@@ -65,11 +70,12 @@ instance Ord Step where
 
 data Result = Result [([Step], TSPState)]
 
+-- instance Show Result where
+    -- show (Result results) = L.intercalate "\n" (map show steps)
+        -- where   steps = concat $ map fst results
+
 instance Show Result where
-    show (Result results) = L.intercalate "\n" (map show steps)
+    show (Result results) = L.intercalate "\n" $ (map show steps)
         where   steps = concat $ map fst results
-
-
-
 
 

@@ -5,6 +5,8 @@ module Main where
 import TSP.Types
 import TSP.Parser
 import TSP.Map
+import TSP.BB
+import TSP.NN
 
 import System.Environment
 import Data.Attoparsec.ByteString.Char8
@@ -14,35 +16,39 @@ import qualified Data.IntMap as InM (map)
 import Data.Either
 import Data.List (intercalate)
 import Prelude hiding (readFile)
-import TSP.BB
-import TSP.NN
 
 
-run :: String -> IO ()
-run path = do
+data TestT = NN | All | Normal
+
+run :: TestT -> String -> IO ()
+run testType path = do
     input <- readFile path
     case parseFile' input of
         Nothing    -> print "parse Failed"
-        Just edges -> do
-            let karte = buildMap edges
-            let karteW = buildWMap edges
+        Just cityEdges -> do
+            let karte = buildMap cityEdges
+            let karteW = buildWMap cityEdges
             Result results <- runAllCities' karteW (keys karteW)
             resultAllCities <- runAllCities karteW (keys karteW)
             let step = head $ fst $ head results
             let bestCycle = stepPath step
             let totalLength = stepCount step
-            putStrLn $ "total length: " ++ show totalLength
-            putStrLn $ "cycle: " ++ show bestCycle
-            -- putStrLn $ (show resultBest)
-            -- writeFile "./data/result_NN.txt" $ intercalate "\n" $ map (show.(tspNN karte)) (keys karte)
-            -- writeFile "./data/result_BB.txt" $ (show $ numberOfCycle resultBest) ++ ("\n") ++ (show resultBest)
-            -- writeFile "./data/result_AllCities.txt" $ (show $ numberOfCycle resultAllCities) ++ ("\n") ++ (show resultAllCities)
+            case testType of 
+                All -> putStrLn $ (show resultAllCities)
+                NN -> putStrLn $ intercalate "\n" $ (map (show.printComplete.(tspNN karte)) (keys karte))
+                    where checkComplete es = length (edges es) >= length (keys karteW)
+                          printComplete es = case checkComplete es of
+                                                True ->  "Travel complete, " ++ (show es)
+                                                False -> "Travel not complete, " ++ (show es)
+                Normal -> putStrLn $ "total length: " ++ show totalLength ++
+                    "cycle: " ++ show bestCycle
 
 
 
 test :: IO ()
--- test = run "data/hw1.TSP.txt"
-test = run "data/hw1.TSP.txt"
+test = run NN "data/hw1.TSP.txt"
+
+
 
 main :: IO ()
 main = do
@@ -51,5 +57,9 @@ main = do
         then
             putStrLn "Please supply path"
         else
-            run (head args)
-
+            let a1:xs = args in case xs of 
+                p:[] -> case a1 of 
+                    "All" -> run All p
+                    "NN" -> run NN p
+                [] -> run Normal a1
+                s:xxs -> putStrLn "Too many arguments"
