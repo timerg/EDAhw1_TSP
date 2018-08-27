@@ -1,4 +1,4 @@
-# Project Title
+# Use state monad to solve traveling salesman problem
 
 A Haskell project using state monad to implement cc and "Branch and Bound" method for solving traveling salesman problem (TSP).
 The "Nearest neighbour" algorithm may not find a solution and the "Branch and Bound" can be taken as a brute force method.
